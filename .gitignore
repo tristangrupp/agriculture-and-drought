@@ -1,0 +1,11 @@
+# Derived data - all reproducible by running the pipeline. ~830 MB.
+data/
+output/
+catalog/
+
+# run logs
+*.log
+
+# python
+__pycache__/
+*.pyc
