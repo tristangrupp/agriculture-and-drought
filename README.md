@@ -1,4 +1,26 @@
-# Drought & Fields
+# Agriculture and drought, Brazil
+
+Two halves of one question. **When and where was a basin in drought?** - answered from
+CHIRPS rainfall against a 1990-2010 baseline. **What did the fields inside it do about
+it?** - answered from Sentinel-2, field by field.
+
+| directory | what it is |
+|---|---|
+| [`drought/`](drought/) | the CHIRPS x HydroBASINS drought product, 2019-2025: climatology, detection, validation, and the event tables in `drought/results/` |
+| root | the fields app - basins joined to 29.2 M trazo4 field polygons, with per-field NDVI response |
+| [`docs/`](docs/) | the published static site, served by GitHub Pages |
+
+Live: **https://tristangrupp.github.io/agriculture-and-drought/**
+The earlier 2019-2025 drought dashboard is still there, at
+[`/overview.html`](https://tristangrupp.github.io/agriculture-and-drought/overview.html).
+
+The drought half has its own README in [`drought/README.md`](drought/README.md), including
+how anomaly is defined so a normal dry season is never reported as a drought. The rest of
+this file covers the fields app.
+
+---
+
+## The fields app
 
 A map where the basin-scale drought product meets the field-scale crop data: 1,072
 HydroBASINS level-6 basins carrying 2024 CHIRPS drought statistics, over 29.2 million
