@@ -304,3 +304,50 @@ code {
 	height: 0; border-top: 1.4px dashed var(--ink-2); vertical-align: 4px;
 }
 #pickCharts .rampLbl { margin-top: 6px; }
+
+/* ---- guided tour --------------------------------------------------------- */
+.tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+/* Full dim only when there is nothing to point at; otherwise the spotlight's own shadow
+   dims the page and leaves it clickable, so nobody is trapped inside the tour. */
+.tourScrim {
+	position: absolute; inset: 0; background: rgba(44, 42, 40, .42); pointer-events: auto;
+}
+.tourSpot {
+	position: fixed; border-radius: 6px; pointer-events: none;
+	box-shadow: 0 0 0 9999px rgba(44, 42, 40, .38);
+	outline: 2px solid var(--accent); outline-offset: 0;
+	transition: left .28s ease, top .28s ease, width .28s ease, height .28s ease;
+}
+.tourCard {
+	position: fixed; left: 16px; top: 16px; width: min(340px, calc(100vw - 32px));
+	background: var(--bg); border: var(--hair) solid var(--line); border-radius: 8px;
+	border-top: 2px solid var(--accent);
+	box-shadow: 0 18px 50px rgba(44, 42, 40, .28); padding: 14px 16px 12px;
+	pointer-events: auto; transition: left .28s ease, top .28s ease;
+}
+.tourStep {
+	margin: 0 0 6px; font: 500 10.5px var(--mono); letter-spacing: .07em;
+	text-transform: uppercase; color: var(--accent-ink);
+}
+.tourCard h2 { margin: 0 0 8px; font: 500 14px var(--mono); color: var(--ink); }
+.tourBody { font-size: 13px; line-height: 1.55; color: var(--ink-2); }
+.tourBody p { margin: 0 0 8px; }
+.tourBody p:last-child { margin-bottom: 0; }
+.tourBody em { color: var(--ink); font-style: normal; font-weight: 600; }
+.tourNav { display: flex; gap: 8px; align-items: center; margin-top: 14px; }
+.tourNav .grow { flex: 1; }
+/* .ghost and .primary set their own display, which beats the hidden attribute's UA rule -
+   so without this, Back shows on the first step. */
+.tour [hidden] { display: none !important; }
+.tourNav button { white-space: nowrap; }
+.tourNav button.primary { width: auto; margin-top: 0; padding: 7px 12px; }
+.tourLink {
+	background: none; border: 0; padding: 4px 0; cursor: pointer;
+	font: 11px var(--mono); color: var(--muted); text-decoration: underline;
+	text-underline-offset: 3px;
+}
+.tourLink:hover { color: var(--ink); }
+.tourLink:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+	.tourSpot, .tourCard { transition: none; }
+}

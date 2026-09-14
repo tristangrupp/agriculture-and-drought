@@ -282,6 +282,25 @@ an afternoon; keep `vendor/maplibre-gl.js` local.
 `spatial` into the wasm build is another ~10 MB and another failure mode, and a polygon
 decoder is forty lines (`src/fields.js`).
 
+### The guided tour
+
+The page opens on 1,072 river basins, ten example buttons, a colour ramp and a command
+palette. For someone outside this work that is a wall, so a first visit gets a one-minute
+tour (`src/tour.js`): where the rain failed, how the basin views differ, one example up
+close, what the pale fields mean, one field's NDVI-against-rain story, and what the method
+cannot claim.
+
+It is skippable at every step, closes on Esc, and remembers being dismissed in
+localStorage. The **Tour** button in the header, the "Take the guided tour" command, or
+`?tour=1` in the URL brings it back.
+
+Two choices in it are deliberate. The field it shows is the 97th percentile of the anomaly
+among scored fields of at least 10 ha, not the maximum: the single most extreme field in a
+window is as likely to be misclassified water or woodland as a real result. And it waits
+up to six seconds for the map before starting, because the map-dependent steps drop out
+while it loads and a counter that jumps from "1 of 6" to "2 of 9" is the opposite of
+reassuring.
+
 ## The public build
 
 `docs/` is a self-contained static site, published with GitHub Pages. It is the same

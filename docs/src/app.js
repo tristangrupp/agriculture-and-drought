@@ -18,6 +18,7 @@ import { CONFIG } from '../config.js';
 import { fieldCharts } from './charts.js';
 import * as F from './fields.js';
 import { createRegistry, coreCommands } from './commands.js';
+import { createTour } from './tour.js';
 
 const $ = (id) => document.getElementById(id);
 const RAMP = ['--d1', '--d2', '--d3', '--d4', '--d5', '--d6', '--d7'];
@@ -291,6 +292,31 @@ function showBasin(props) {
    MapLibre never reports ready. */
 loadExamples();
 
+/* Static-build cleanup is page structure, not cartography, so it runs immediately.
+   Inside the map load handler it waited on WebGL: when the map stalled, the public
+   site still offered a live-query view and notes for a path that does not ship. */
+if (STATIC) {
+	// No parquet ships, so the live-query view would only ever fail, and the notes
+	// must not tell the reader to use a path that is not there.
+	document.querySelectorAll('[data-view="fields"]').forEach((a) => a.remove());
+	const zf = $('zoomFields');
+	if (zf) zf.hidden = true;
+	const a = $('noteA');
+	const b = $('noteB');
+	if (a) {
+		a.innerHTML =
+			'Pick an example on the left. Each is a window of a few thousand fields, ' +
+			'scored against Sentinel-2 through that basin’s 2024 drought.';
+	}
+	if (b) {
+		b.innerHTML =
+			'Click any field for its NDVI trend against the rainfall that drove it. ' +
+			'Holding greenness is consistent with irrigation — and with deeper ' +
+			'roots, a later planting, or wetter soil.';
+	}
+}
+
+
 setTimeout(() => {
 	if (state.mapReady) return;
 	const lead = $('ctxLead');
@@ -363,26 +389,6 @@ map.on('load', async () => {
 	// the polygons land on actual parcels.
 	setBasemap(true);
 	state.mapReady = true;
-	if (STATIC) {
-		// No parquet ships, so the live-query view would only ever fail, and the notes
-		// must not tell the reader to use a path that is not there.
-		document.querySelectorAll('[data-view="fields"]').forEach((a) => a.remove());
-		const zf = $('zoomFields');
-		if (zf) zf.hidden = true;
-		const a = $('noteA');
-		const b = $('noteB');
-		if (a) {
-			a.innerHTML =
-				'Pick an example on the left. Each is a window of a few thousand fields, ' +
-				'scored against Sentinel-2 through that basin’s 2024 drought.';
-		}
-		if (b) {
-			b.innerHTML =
-				'Click any field for its NDVI trend against the rainfall that drove it. ' +
-				'Holding greenness is consistent with irrigation — and with deeper ' +
-				'roots, a later planting, or wetter soil.';
-		}
-	}
 	const initial = location.hash.replace('#', '');
 	setView(VIEWS[initial] ? initial : 'overview');
 });
@@ -503,6 +509,15 @@ function ensureFieldLayers() {
 		type: 'line',
 		source: 'fields',
 		paint: { 'line-color': '#ffffff', 'line-width': 0.4, 'line-opacity': 0.9 }
+	});
+	// Outlines whichever field the right-hand panel is describing. Without it, "this
+	// field" in the panel has no visible referent among twenty thousand polygons.
+	map.addLayer({
+		id: 'fields-pick',
+		type: 'line',
+		source: 'fields',
+		filter: ['==', ['get', 'fid'], -1],
+		paint: { 'line-color': '#2c2a28', 'line-width': 2.6 }
 	});
 }
 
@@ -797,6 +812,9 @@ async function ensureSeries(hybas) {
 
 async function showField(props) {
 	state.picked = props;
+	if (map.getLayer('fields-pick')) {
+		map.setFilter('fields-pick', ['==', ['get', 'fid'], props.fid]);
+	}
 	const box = $('pickBox');
 	if (!box) return;
 	box.hidden = false;
@@ -923,7 +941,11 @@ async function loadExample(hybas) {
 		state.response = rec;
 		state.series = null;
 		state.picked = null;
+		state.exampleGeo = gj;
 		$('pickBox').hidden = true;
+		if (map.getLayer('fields-pick')) {
+			map.setFilter('fields-pick', ['==', ['get', 'fid'], -1]);
+		}
 		for (const f of gj.features) {
 			f.properties.mb_name =
 				CONFIG.MB_CLASSES[Number(f.properties.mb_class)] || 'unclassified';
@@ -1138,7 +1160,10 @@ function setView(name) {
 	const v = VIEWS[name];
 	if (!v) return;
 	state.view = name;
-	document.querySelectorAll('.view-link').forEach((a) =>
+	// Only the view links carry data-view. The example buttons share the .view-link class
+	// for styling, and toggling them here cleared the chosen example's highlight the moment
+	// loadExample switched to the response view.
+	document.querySelectorAll('.view-link[data-view]').forEach((a) =>
 		a.classList.toggle('active', a.dataset.view === name)
 	);
 	$('ctxTitle').textContent = v.title;
@@ -1277,6 +1302,53 @@ function runIndex(i) {
 $('paletteInput').addEventListener('input', (e) => renderPalette(e.target.value));
 $('paletteScrim').onclick = closePalette;
 $('paletteBtn').onclick = openPalette;
+
+/** A clearly-held field for the tour to show: the 97th percentile of the anomaly among
+    scored fields big enough to see, not the maximum - the single most extreme field in a
+    window is as likely to be a misclassified patch of water or woodland as a real result. */
+function standoutField() {
+	const gj = state.exampleGeo;
+	if (!gj) return null;
+	const pool = gj.features.filter(
+		(f) => f.properties.held != null && f.properties.anom != null &&
+			Number(f.properties.area_ha) >= 10
+	);
+	if (!pool.length) return null;
+	pool.sort((a, b) => a.properties.anom - b.properties.anom);
+	const f = pool[Math.min(pool.length - 1, Math.floor(pool.length * 0.97))];
+	let w = Infinity;
+	let s = Infinity;
+	let e = -Infinity;
+	let n = -Infinity;
+	const walk = (c) => {
+		if (typeof c[0] === 'number') {
+			w = Math.min(w, c[0]); e = Math.max(e, c[0]);
+			s = Math.min(s, c[1]); n = Math.max(n, c[1]);
+		} else c.forEach(walk);
+	};
+	walk(f.geometry.coordinates);
+	return { props: f.properties, center: [(w + e) / 2, (s + n) / 2] };
+}
+
+const tour = createTour({
+	setView,
+	flyToBrazil,
+	flyTo: (center, zoom) => map.flyTo({ center, zoom, duration: 1300 }),
+	mapReady: () => !!state.mapReady,
+	hasExamples: () => !!(state.examples && state.examples.length),
+	firstExample: () => (state.examples && state.examples[0] ? state.examples[0].hybas : null),
+	currentExample: () => (state.response ? state.example : null),
+	currentRegion: () => {
+		const ex = (state.examples || []).find((e) => e.hybas === state.example);
+		return ex ? `${ex.region} \u2014 ${ex.system.toLowerCase()}` : null;
+	},
+	loadExample,
+	standoutField,
+	showField
+});
+ctx.startTour = () => tour.start();
+$('tourBtn').onclick = () => tour.start();
+tour.maybeAutostart();
 addEventListener('keydown', (e) => {
 	const open = !$('paletteWrap').hidden;
 	if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {

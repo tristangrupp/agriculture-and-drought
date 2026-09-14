@@ -62,7 +62,7 @@ EXAMPLES = [
 
 COPY_SRC = [
     "index.html",
-    ("src", ["app.js", "app.css", "charts.js", "commands.js", "fields.js"]),
+    ("src", ["app.js", "app.css", "charts.js", "commands.js", "fields.js", "tour.js"]),
     ("vendor", None),
 ]
 
@@ -326,6 +326,17 @@ def main():
     # names begin with an underscore. Nothing here does today, but the cost of being wrong
     # is a 404 on a data file with no error anywhere.
     open(os.path.join(out, ".nojekyll"), "w").close()
+
+    # The earlier 2019-2025 drought dashboard served at the site root before this app
+    # replaced it, and it stays reachable at /overview.html. It has to be copied here, by
+    # the build, from its source in drought/: this function deletes docs/ before writing,
+    # so a copy placed by hand is silently wiped by the next rebuild - which is exactly how
+    # it was lost once.
+    legacy = os.path.join(APP, "drought", "index.html")
+    if os.path.exists(legacy):
+        shutil.copy2(legacy, os.path.join(out, "overview.html"))
+    else:
+        print("  WARNING: drought/index.html missing - /overview.html will 404")
 
     total = sum(os.path.getsize(os.path.join(dp, f))
                 for dp, _, fs in os.walk(out) for f in fs)

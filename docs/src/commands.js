@@ -173,6 +173,13 @@ export function coreCommands(ctx) {
 			run: () => ctx.flyToBrazil()
 		},
 		{
+			id: 'help.tour',
+			title: 'Take the guided tour',
+			group: 'Help',
+			keywords: ['tour', 'help', 'guide', 'intro', 'start', 'what is this', 'new'],
+			run: () => ctx.startTour()
+		},
+		{
 			id: 'view.basemap',
 			title: 'Toggle satellite basemap',
 			group: 'View',
