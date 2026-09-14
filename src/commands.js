@@ -173,6 +173,13 @@ export function coreCommands(ctx) {
 			run: () => ctx.flyToBrazil()
 		},
 		{
+			id: 'view.backToBasins',
+			title: 'Back to all basins',
+			group: 'View',
+			keywords: ['basins', 'zoom out', 'overview', 'brazil', 'back', 'exit fields'],
+			run: () => ctx.backToBasins()
+		},
+		{
 			id: 'help.tour',
 			title: 'Take the guided tour',
 			group: 'Help',

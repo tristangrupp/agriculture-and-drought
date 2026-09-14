@@ -282,6 +282,28 @@ an afternoon; keep `vendor/maplibre-gl.js` local.
 `spatial` into the wasm build is another ~10 MB and another failure mode, and a polygon
 decoder is forty lines (`src/fields.js`).
 
+### Basin view and field view
+
+Early feedback: after the tour it was hard to tell the basin context from the field
+context. Zoomed out on basins and zoomed in on field NDVI want different panel
+hierarchies, and the panel was showing both at once - "Colour basins by" and the basin
+ramp sat directly above the field legend while the map showed fields.
+
+The fix follows the learning-objectives framing from
+[visualobjectives.net](https://visualobjectives.net) (Adar and Lee-Robbins): each view
+names the one thing the viewer should be able to do, and the panel keeps only what
+serves it.
+
+- **Basin view** - *Where did the rain fail, and did it hit farmland?* Basin colour
+  controls, the basin ranking and the basin card.
+- **Field view** - *Under the same rain, which fields stayed green?* The example summary,
+  the field legend and the picked field's trend.
+
+Mode follows the map rather than a menu: it is field view when an example is loaded and
+the map is zoomed in to about z8.5, otherwise basin view. The objective sits at the top of
+the panel, the breadcrumb names the mode, the two differ in rail colour as well as text,
+and "Back to all basins" (also a palette command) returns from field view.
+
 ### The guided tour
 
 The page opens on 1,072 river basins, ten example buttons, a colour ramp and a command

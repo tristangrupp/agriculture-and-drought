@@ -20,6 +20,8 @@
     <span class="crumb-root">WATER INTELLIGENCE</span>
     <span class="crumb-sep">/</span>
     <span class="crumb-leaf">DROUGHT &amp; FIELDS</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-mode" id="crumbMode">BASINS</span>
   </div>
   <div class="header-right">
     <span class="badge" id="scopeBadge">BRAZIL 2024</span>
@@ -81,13 +83,24 @@
 
   <!-- right: context for the active view -->
   <aside class="context" id="context">
+    <!-- One objective per mode. Everything below it either serves that objective or is
+         hidden while it is active. -->
+    <section class="objective" id="objBox" data-mode="basin" aria-live="polite">
+      <p class="objMode" id="objMode">Basin view</p>
+      <p class="objQ" id="objQ">Where did the rain fail, and did it hit farmland?</p>
+      <p class="objText" id="objText"></p>
+      <button type="button" class="objBack" id="objBack" hidden>&larr; Back to all basins</button>
+    </section>
+
     <section class="card" id="cardMain">
       <h2 id="ctxTitle">Drought overview</h2>
       <p class="ctxLead" id="ctxLead">Loading basins…</p>
-      <label class="group" for="metricSel">Colour basins by</label>
-      <select id="metricSel"></select>
-      <div class="ramp" id="ramp"></div>
-      <div class="rampLbl"><span id="rampLo">0</span><span id="rampHi"></span></div>
+      <div id="basinControls">
+        <label class="group" for="metricSel">Colour basins by</label>
+        <select id="metricSel"></select>
+        <div class="ramp" id="ramp"></div>
+        <div class="rampLbl"><span id="rampLo">0</span><span id="rampHi"></span></div>
+      </div>
       <div id="ctxExtra"></div>
       <label class="toggle" for="satToggle">
         <input type="checkbox" id="satToggle" checked>

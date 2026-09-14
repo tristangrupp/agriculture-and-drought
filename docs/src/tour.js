@@ -106,7 +106,9 @@ function buildSteps(h) {
         outline is one farm field.</p>
         <p>Satellites measured how green each field was through the drought.
         <em>Darker green</em> means a field stayed greener than the fields around it while
-        the rain failed.</p>`
+        the rain failed.</p>
+        <p>Notice the top of the right-hand panel has switched to <em>Field view</em>, with
+        its own question. Zoom out, or use <em>Back to all basins</em>, to return.</p>`
 		},
 		{
 			id: 'pale',

@@ -42,11 +42,37 @@ const state = {
 	stressed: null,        // ranked shortlist of drought-on-cropland basins
 	responseIndex: null,   // basins that have a Sentinel-2 response layer
 	response: null,        // the loaded layer: per-field NDVI behaviour
+	mode: null,            // 'basin' or 'field' - decides what the panel is for
 	examples: null,        // the shipped example windows
 	example: null,         // which one is open
 	series: null,          // per-field NDVI + basin rainfall for the open example
 	picked: null           // the field whose trend is on screen
 };
+
+/* Two modes, each with a single objective. The copy is written as what the viewer
+   should be able to do in this mode - the panel below it keeps only what serves that. */
+const MODES = {
+	basin: {
+		label: 'Basin view',
+		crumb: 'BASINS',
+		q: 'Where did the rain fail, and did it hit farmland?',
+		text:
+			'Compare basins. Darker means more days in 2024 when rain fell short of normal for ' +
+			'that time of year. Switch to cropland exposure to see where the drought met farms.'
+	},
+	field: {
+		label: 'Field view',
+		crumb: 'FIELDS',
+		q: 'Under the same rain, which fields stayed green?',
+		text:
+			'Every field here got the same rainfall. Darker green fields held their greenness ' +
+			'better than their neighbours; pale ones were not measured. Click a field for its ' +
+			'trend against the rain.'
+	}
+};
+
+/** Fields are legible from about here; below it the map is a basin map again. */
+const FIELD_MODE_ZOOM = 8.5;
 
 /** True on the GitHub Pages build, where there is no parquet to query. */
 const STATIC = !!CONFIG.STATIC;
@@ -382,6 +408,7 @@ map.on('load', async () => {
 	map.on('click', 'fields-fill', (e) => showField(e.features[0].properties));
 	map.on('zoomend', updateFieldButton);
 	map.on('zoomend', updateSatHint);
+	map.on('moveend', () => applyMode());
 	updateFieldButton();
 	const satBox = $('satToggle');
 	if (satBox) satBox.onchange = () => setBasemap(satBox.checked);
@@ -817,7 +844,7 @@ async function showField(props) {
 	}
 	const box = $('pickBox');
 	if (!box) return;
-	box.hidden = false;
+	box.hidden = state.mode !== 'field' && currentMode() !== 'field';
 	$('pickTitle').textContent = props.mb_name || 'Field';
 	$('pickStats').innerHTML =
 		`<div class="stat"><span class="v">${
@@ -971,6 +998,7 @@ async function loadExample(hybas) {
        clear satellite looks. Click one to see which.</p>`;
 		if (state.view !== 'response') setView('response');
 		else renderResponsePanel();
+		map.once('moveend', () => applyMode(true));
 		log(`${ex.region}: ${gj.features.length.toLocaleString()} fields`,
 			`${ex.system} \u00b7 ${rec.event.days}-day drought`);
 	} catch (err) {
@@ -1156,6 +1184,64 @@ function renderResponsePanel() {
 	});
 }
 
+/** Which mode the map is actually in: fields are loaded and legible, or they are not. */
+function currentMode() {
+	if (map.getZoom() < FIELD_MODE_ZOOM) return 'basin';
+	// Loaded fields only count if they are on screen. Zoomed in on some other basin with an
+	// example still loaded far away, the map is showing basins, so the panel should too.
+	if (state.response && state.response.aoi) {
+		const [w, s, e, n] = state.response.aoi;
+		const b = map.getBounds();
+		if (b.getWest() <= e && b.getEast() >= w && b.getSouth() <= n && b.getNorth() >= s) {
+			return 'field';
+		}
+	}
+	const live = state.fields && state.fields.features && state.fields.features.length;
+	return live ? 'field' : 'basin';
+}
+
+/**
+ * Re-point the panel at one objective. Basin mode keeps the basin colour controls, ranking
+ * and basin card; field mode keeps the example summary, field legend and picked field.
+ * Neither mode shows the other's legend, which is what made the two hard to tell apart.
+ */
+function applyMode(force) {
+	const mode = currentMode();
+	if (!force && mode === state.mode) return;
+	state.mode = mode;
+	const m = MODES[mode];
+	const box = $('objBox');
+	if (box) box.dataset.mode = mode;
+	if ($('objMode')) $('objMode').textContent = m.label;
+	if ($('objQ')) $('objQ').textContent = m.q;
+	if ($('objText')) $('objText').textContent = m.text;
+	if ($('crumbMode')) $('crumbMode').textContent = m.crumb;
+	if ($('objBack')) $('objBack').hidden = mode !== 'field';
+	document.body.dataset.mode = mode;
+
+	const field = mode === 'field';
+	if ($('basinControls')) $('basinControls').hidden = field;
+	if ($('basinBox')) $('basinBox').hidden = field || !state.selected;
+	if ($('fieldBox')) $('fieldBox').hidden = !field;
+	if ($('pickBox')) $('pickBox').hidden = !field || !state.picked;
+	// The example summary lives in ctxExtra; in basin mode that space is the basin ranking.
+	if (field && state.view === 'response') renderResponsePanel();
+	else if (!field) renderRanking();
+	if ($('ctxTitle')) {
+		$('ctxTitle').textContent = field
+			? (VIEWS.response && VIEWS.response.title) || 'Field drought response'
+			: (VIEWS[state.view === 'response' ? 'overview' : state.view] || VIEWS.overview).title;
+	}
+	if ($('ctxLead')) {
+		$('ctxLead').hidden = field;
+	}
+}
+
+function backToBasins() {
+	setView('overview');
+	flyToBrazil();
+}
+
 function setView(name) {
 	const v = VIEWS[name];
 	if (!v) return;
@@ -1194,8 +1280,7 @@ function setView(name) {
 		renderRanking();
 	}
 	applyFieldPaint();
-	$('notesBox').hidden = name === 'method' ? false : false;
-	if (name === 'fields' || name === 'response') $('fieldBox').hidden = false;
+	applyMode(true);
 }
 
 const ctx = {
@@ -1302,6 +1387,9 @@ function runIndex(i) {
 $('paletteInput').addEventListener('input', (e) => renderPalette(e.target.value));
 $('paletteScrim').onclick = closePalette;
 $('paletteBtn').onclick = openPalette;
+if ($('objBack')) $('objBack').onclick = backToBasins;
+ctx.backToBasins = backToBasins;
+applyMode(true);
 
 /** A clearly-held field for the tour to show: the 97th percentile of the anomaly among
     scored fields big enough to see, not the maximum - the single most extreme field in a
