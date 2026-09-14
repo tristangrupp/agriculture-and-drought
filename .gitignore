@@ -1,0 +1,28 @@
+# The trazo4 field corpus is unpublished and has no accompanying peer-reviewed
+# publication. It must not leave this machine. Never commit, never push to a public
+# bucket. Regenerate with pipeline/repack_fields.py from E:\trazo4_fields_parquet.
+data/fields/
+data/inventory.json
+
+# The five public example windows are a deliberate, authorised subset of that corpus and
+# DO ship, but only from docs/ - the build output. These are the working copies.
+data/response/fields_*.geojson
+
+# Vendored MapLibre: ignored at the root, where it is refetchable, but docs/vendor/ is
+# committed because the published site cannot load it from a CDN. MapLibre tiles GeoJSON
+# in a web worker, and a cross-origin script cannot spawn one.
+/vendor/
+
+# run artefacts
+*.log
+__pycache__/
+*.pyc
+
+# Scratch build target used to smoke-test the site assembly.
+docs_test/
+
+# Per-field trend series are copied verbatim into docs/ by the build, so committing the
+# working copy too would store every byte twice. The response_*.json files are NOT
+# duplicates - they keep the full per-field table that the published copy strips out,
+# which is what lets the site be rebuilt without re-pulling Sentinel-2.
+data/response/series_*.json

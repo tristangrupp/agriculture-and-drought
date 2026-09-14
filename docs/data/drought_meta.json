@@ -1,0 +1,36 @@
+{
+ "year": 2024,
+ "metrics": [
+  {
+   "key": "total_drought_days",
+   "label": "Days in drought",
+   "min": 0.0,
+   "max": 289.0,
+   "p95": 201.0
+  },
+  {
+   "key": "longest_event_days",
+   "label": "Longest event (days)",
+   "min": 0.0,
+   "max": 335.0,
+   "p95": 161.0
+  },
+  {
+   "key": "n_events",
+   "label": "Number of events",
+   "min": 0.0,
+   "max": 5.0,
+   "p95": 4.0
+  },
+  {
+   "key": "total_deficit_mm",
+   "label": "Rainfall deficit (mm)",
+   "min": 0.0,
+   "max": 427.2,
+   "p95": 194.945
+  }
+ ],
+ "n_basins": 1072,
+ "n_basins_in_drought": 1012,
+ "total_events": 2546
+}

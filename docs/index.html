@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Drought and Fields</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<!-- MapLibre is vendored rather than pulled from a CDN: it tiles GeoJSON in a web
+     worker, and a cross-origin script cannot spawn that worker, so the map paints its
+     background and then silently never renders a single data layer. -->
+<link rel="stylesheet" href="./vendor/maplibre-gl.css">
+<link rel="stylesheet" href="./src/app.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="crumbs">
+    <span class="crumb-root">WATER INTELLIGENCE</span>
+    <span class="crumb-sep">/</span>
+    <span class="crumb-leaf">DROUGHT &amp; FIELDS</span>
+  </div>
+  <div class="header-right">
+    <span class="badge" id="scopeBadge">BRAZIL 2024</span>
+    <button class="ghost" id="paletteBtn" type="button">
+      <span>COMMANDS</span><kbd id="kbdHint">⌘K</kbd>
+    </button>
+  </div>
+</header>
+
+<div class="shell">
+
+  <!-- left: views, in the reference's grouped-nav form -->
+  <nav class="sidebar" id="sidebar" aria-label="Views">
+    <p class="group">Drought &amp; exposure</p>
+    <a class="view-link active" data-view="overview" href="#overview">
+      <span class="vt">Drought overview</span>
+      <span class="vd">2024 CHIRPS drought across 1,072 basins</span>
+    </a>
+    <a class="view-link" data-view="stress" href="#stress">
+      <span class="vt">Water-stressed basins</span>
+      <span class="vd">Where the severe drought lands on farmland</span>
+    </a>
+    <a class="view-link" data-view="exposure" href="#exposure">
+      <span class="vt">Cropland exposure</span>
+      <span class="vd">Hectares of crop under drought, per basin</span>
+    </a>
+
+    <p class="group">Field level</p>
+    <a class="view-link" data-view="fields" href="#fields">
+      <span class="vt">Fields in view</span>
+      <span class="vd">29.2 M plots, queried live from GeoParquet</span>
+    </a>
+    <a class="view-link" data-view="response" href="#response">
+      <span class="vt">Field drought response</span>
+      <span class="vd">Which fields held greenness through the drought</span>
+    </a>
+
+    <div id="exampleNav"></div>
+
+    <p class="group">Reference</p>
+    <a class="view-link" data-view="method" href="#method">
+      <span class="vt">How this works</span>
+      <span class="vd">Pruning, provenance and what it cannot say</span>
+    </a>
+  </nav>
+
+  <!-- centre: the map -->
+  <main class="main">
+    <div id="map"></div>
+    <div id="log" class="log" aria-live="polite"></div>
+  </main>
+
+  <!-- right: context for the active view -->
+  <aside class="context" id="context">
+    <section class="card" id="cardMain">
+      <h2 id="ctxTitle">Drought overview</h2>
+      <p class="ctxLead" id="ctxLead">Loading basins…</p>
+      <label class="group" for="metricSel">Colour basins by</label>
+      <select id="metricSel"></select>
+      <div class="ramp" id="ramp"></div>
+      <div class="rampLbl"><span id="rampLo">0</span><span id="rampHi"></span></div>
+      <div id="ctxExtra"></div>
+      <label class="toggle" for="satToggle">
+        <input type="checkbox" id="satToggle" checked>
+        <span>
+          <span class="tt">Satellite underlay</span>
+          <span class="td" id="satHint">Esri World Imagery, held well back</span>
+        </span>
+      </label>
+    </section>
+
+    <section class="card" id="basinBox" hidden>
+      <h2 id="basinTitle">Basin</h2>
+      <div class="stats" id="basinStats"></div>
+      <div id="basinEvents"></div>
+      <button class="primary" id="zoomFields" type="button">Load fields here</button>
+    </section>
+
+    <section class="card" id="fieldBox" hidden>
+      <h2>Fields in view</h2>
+      <div class="stats" id="fieldStats"></div>
+      <div id="fieldClasses"></div>
+    </section>
+
+    <section class="card" id="pickBox" hidden>
+      <h2 id="pickTitle">Field</h2>
+      <div class="stats" id="pickStats"></div>
+      <div id="pickCharts"></div>
+    </section>
+
+    <section class="card" id="notesBox">
+      <h2>Notes</h2>
+      <ul class="notes" id="notes">
+        <li id="noteA">Basins ship whole as GeoJSON; fields are read per viewport with
+          DuckDB over HTTP range requests, so nothing is preloaded.</li>
+        <li id="noteB">Zoom past z10.5, then press <kbd>Ctrl K</kbd> and run
+          “Load fields in view”.</li>
+      </ul>
+    </section>
+  </aside>
+</div>
+
+<!-- command palette -->
+<div id="paletteWrap" class="paletteWrap" hidden>
+  <div class="paletteScrim" id="paletteScrim"></div>
+  <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
+    <input id="paletteInput" type="text" autocomplete="off" spellcheck="false"
+           placeholder="Type a command — try “cropland”, “fly to Sorriso”, “over 150 days”">
+    <ul id="paletteList" role="listbox"></ul>
+    <div class="paletteFoot">
+      <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
+      <span><kbd>enter</kbd> run</span>
+      <span><kbd>esc</kbd> close</span>
+    </div>
+  </div>
+</div>
+
+<div id="tip" class="tip"></div>
+
+<script src="./vendor/maplibre-gl.js"></script>
+<script type="module" src="./src/app.js"></script>
+</body>
+</html>
