@@ -14,11 +14,11 @@
  * follow WRI's ai-web-map-exploration experiments.
  */
 
-import { CONFIG } from '../config.js';
-import { fieldCharts } from './charts.js';
-import * as F from './fields.js';
-import { createRegistry, coreCommands } from './commands.js';
-import { createTour } from './tour.js';
+import { CONFIG } from '../config.js?v=546c63c8ff';
+import { fieldCharts } from './charts.js?v=772c603ccc';
+import * as F from './fields.js?v=08ec1bba5d';
+import { createRegistry, coreCommands } from './commands.js?v=984a0b3f46';
+import { createTour } from './tour.js?v=7a1f62d3b2';
 
 const $ = (id) => document.getElementById(id);
 const RAMP = ['--d1', '--d2', '--d3', '--d4', '--d5', '--d6', '--d7'];

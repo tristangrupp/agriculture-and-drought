@@ -15,7 +15,7 @@
  * extra failure mode, and a polygon decoder is forty lines.
  */
 
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config.js?v=546c63c8ff';
 
 const DUCKDB_CDN = 'https://cdn.jsdelivr.net/npm/@duckdb/duckdb-wasm@1.32.0/+esm';
 

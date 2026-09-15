@@ -358,6 +358,16 @@ GitHub Pages, `main` branch, `/docs` folder — no Actions, no build step on the
 `docs/.nojekyll` is written by the build because Jekyll silently drops paths beginning with
 an underscore, and a silently missing data file is the worst kind of 404.
 
+### Why the published asset URLs carry hashes
+
+GitHub Pages serves everything with a ten-minute cache, and the page used to load its
+scripts from fixed URLs such as `./src/app.js`. A returning visitor therefore kept running
+the previous deploy - the example buttons looked missing after one push, and a set of
+field-view fixes stayed invisible after another. The build now appends a content hash to
+every script and stylesheet URL, and rewrites the imports between scripts the same way, so
+a changed file gets a new URL and is fetched fresh. Each file always carries one hash, so a
+module imported from two places (`config.js` from three) still loads once.
+
 ### Hosting the full corpus, later
 
 `config.js → FIELDS_BASE` is the single line to edit. The only hard requirement of a host

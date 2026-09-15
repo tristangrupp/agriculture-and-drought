@@ -9,7 +9,7 @@
  * palette knowing anything about it.
  */
 
-import { CONFIG } from '../config.js';
+import { CONFIG } from '../config.js?v=546c63c8ff';
 
 /** Very small subsequence scorer — good enough to rank a few dozen commands. */
 export function score(query, text) {

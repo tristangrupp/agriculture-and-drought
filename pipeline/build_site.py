@@ -215,6 +215,56 @@ export const CONFIG = {
 """
 
 
+
+def bust_caches(out):
+    """Give every script and stylesheet a content-hashed URL.
+
+    GitHub Pages serves with a ten-minute cache, and index.html loading ./src/app.js by a
+    fixed URL meant a returning visitor kept running the previous deploy's code - the
+    example buttons "missing" after one push, and the field-view fixes invisible after
+    another. ES module imports are cached by URL too, so the imports inside the scripts are
+    rewritten as well, each file always carrying its own hash so a module shared by two
+    importers is still loaded once.
+    """
+    import hashlib
+    import re
+
+    files = {
+        "config.js": os.path.join(out, "config.js"),
+    }
+    src_dir = os.path.join(out, "src")
+    for f in os.listdir(src_dir):
+        if f.endswith((".js", ".css")):
+            files["src/" + f] = os.path.join(src_dir, f)
+    # Hash the content before any rewriting, so the hash tracks the source that changed.
+    tag = {k: hashlib.sha1(open(v, "rb").read()).hexdigest()[:10] for k, v in files.items()}
+
+    def swap_imports(path, base):
+        s = open(path, encoding="utf-8").read()
+
+        def repl(m):
+            spec = m.group(2)
+            target = os.path.normpath(os.path.join(base, spec)).replace(os.sep, "/")
+            key = next((k for k in tag if target.endswith(k)), None)
+            if not key:
+                return m.group(0)
+            return "%s%s?v=%s%s" % (m.group(1), spec, tag[key], m.group(3))
+
+        s = re.sub(r"""(from\s+['"])(\.{1,2}/[^'"?]+\.js)(['"])""", repl, s)
+        s = re.sub(r"""(import\(\s*['"])(\.{1,2}/[^'"?]+\.js)(['"])""", repl, s)
+        open(path, "w", encoding="utf-8").write(s)
+
+    for k, v in files.items():
+        if k.endswith(".js"):
+            swap_imports(v, os.path.dirname(k) or ".")
+
+    idx = os.path.join(out, "index.html")
+    h = open(idx, encoding="utf-8").read()
+    for k, v in tag.items():
+        h = h.replace('"./%s"' % k, '"./%s?v=%s"' % (k, v))
+    open(idx, "w", encoding="utf-8").write(h)
+    return tag
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="docs")
@@ -332,6 +382,9 @@ def main():
     # the build, from its source in drought/: this function deletes docs/ before writing,
     # so a copy placed by hand is silently wiped by the next rebuild - which is exactly how
     # it was lost once.
+    tags = bust_caches(out)
+    print("  cache-busted %d files (app.js ?v=%s)" % (len(tags), tags.get("src/app.js")))
+
     legacy = os.path.join(APP, "drought", "index.html")
     if os.path.exists(legacy):
         shutil.copy2(legacy, os.path.join(out, "overview.html"))
