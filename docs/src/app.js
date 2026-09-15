@@ -318,6 +318,13 @@ function showBasin(props) {
    MapLibre never reports ready. */
 loadExamples();
 
+/* MapLibre only listens for window resizes. The map's own box also changes when the panel
+   switches mode or grows a scrollbar, and without this the canvas kept its old size and
+   left a blank strip down the right-hand side and along the bottom. */
+if (typeof ResizeObserver !== 'undefined') {
+	new ResizeObserver(() => map.resize()).observe(document.getElementById('map'));
+}
+
 /* Static-build cleanup is page structure, not cartography, so it runs immediately.
    Inside the map load handler it waited on WebGL: when the map stalled, the public
    site still offered a live-query view and notes for a path that does not ship. */
@@ -983,7 +990,6 @@ async function loadExample(hybas) {
 		showAoi(rec.aoi);
 		const [w, s, e, n] = rec.aoi;
 		map.fitBounds([[w, s], [e, n]], { padding: 20, duration: 1100 });
-		$('fieldBox').hidden = false;
 		const nScored = gj.features.filter((f) => f.properties.held != null).length;
 		$('fieldStats').innerHTML =
 			`<div class="stat"><span class="v">${gj.features.length.toLocaleString()}</span>
@@ -1108,7 +1114,9 @@ function renderExamplePanel() {
      <div class="rampLbl"><span>like its neighbours</span><span>held greenness</span></div>
      <p class="ctxLead" style="margin-top:10px">${note}</p>
      <p class="ctxLead" style="margin-top:8px">Mostly ${ex.crops.join(' and ')}.
-       Drought ran ${rec.event.start} to ${rec.event.end}.</p>`;
+       Drought ran ${rec.event.start} to ${rec.event.end}.</p>
+     <p class="ctxLead" style="margin-top:8px">Every field trazo4 delineated here is drawn.
+       Click a pale one to see why it was not scored.</p>`;
 }
 
 function renderResponsePanel() {
@@ -1186,6 +1194,9 @@ function renderResponsePanel() {
 
 /** Which mode the map is actually in: fields are loaded and legible, or they are not. */
 function currentMode() {
+	// Leaving for the basin view is the reader's decision the moment they click, not when a
+	// multi-second fly-out finally drops the zoom below the threshold.
+	if (state.leavingFields) return 'basin';
 	if (map.getZoom() < FIELD_MODE_ZOOM) return 'basin';
 	// Loaded fields only count if they are on screen. Zoomed in on some other basin with an
 	// example still loaded far away, the map is showing basins, so the panel should too.
@@ -1222,7 +1233,10 @@ function applyMode(force) {
 	const field = mode === 'field';
 	if ($('basinControls')) $('basinControls').hidden = field;
 	if ($('basinBox')) $('basinBox').hidden = field || !state.selected;
-	if ($('fieldBox')) $('fieldBox').hidden = !field;
+	// "Fields in view" belongs to the live-query path. For a shipped example the response
+	// card already states fields mapped and scored, and a second card repeating them only
+	// pushes the picked field's chart further down.
+	if ($('fieldBox')) $('fieldBox').hidden = !field || !!state.response;
 	if ($('pickBox')) $('pickBox').hidden = !field || !state.picked;
 	// The example summary lives in ctxExtra; in basin mode that space is the basin ranking.
 	if (field && state.view === 'response') renderResponsePanel();
@@ -1238,8 +1252,13 @@ function applyMode(force) {
 }
 
 function backToBasins() {
+	state.leavingFields = true;
 	setView('overview');
 	flyToBrazil();
+	map.once('moveend', () => {
+		state.leavingFields = false;
+		applyMode(true);
+	});
 }
 
 function setView(name) {
