@@ -11,14 +11,12 @@
      worker, and a cross-origin script cannot spawn that worker, so the map paints its
      background and then silently never renders a single data layer. -->
 <link rel="stylesheet" href="./vendor/maplibre-gl.css">
-<link rel="stylesheet" href="./src/app.css?v=ade7162b00">
+<link rel="stylesheet" href="./src/app.css?v=93f369ee53">
 </head>
 <body>
 
 <header class="header">
   <div class="crumbs">
-    <span class="crumb-root">WATER INTELLIGENCE</span>
-    <span class="crumb-sep">/</span>
     <span class="crumb-leaf">DROUGHT &amp; FIELDS</span>
     <span class="crumb-sep">/</span>
     <span class="crumb-mode" id="crumbMode">BASINS</span>
@@ -29,7 +27,7 @@
       <span>TOUR</span>
     </button>
     <button class="ghost" id="paletteBtn" type="button">
-      <span>COMMANDS</span><kbd id="kbdHint">⌘K</kbd>
+      <kbd id="kbdHint">⌘K</kbd>
     </button>
   </div>
 </header>
@@ -38,40 +36,29 @@
 
   <!-- left: views, in the reference's grouped-nav form -->
   <nav class="sidebar" id="sidebar" aria-label="Views">
-    <p class="group">Drought &amp; exposure</p>
+    <p class="group">Basins</p>
     <a class="view-link active" data-view="overview" href="#overview">
-      <span class="vt">Drought overview</span>
-      <span class="vd">2024 CHIRPS drought across 1,072 basins</span>
+      <span class="vt">Drought</span>
     </a>
     <a class="view-link" data-view="stress" href="#stress">
-      <span class="vt">Water-stressed basins</span>
-      <span class="vd">Where the severe drought lands on farmland</span>
+      <span class="vt">Water stress</span>
     </a>
     <a class="view-link" data-view="exposure" href="#exposure">
       <span class="vt">Cropland exposure</span>
-      <span class="vd">Hectares of crop under drought, per basin</span>
     </a>
 
-    <p class="group">Field level</p>
-    <a class="view-link" data-view="fields" href="#fields">
+    <a class="view-link" data-view="fields" href="#fields" hidden>
       <span class="vt">Fields in view</span>
-      <span class="vd">29.2 M plots, queried live from GeoParquet</span>
     </a>
-    <a class="view-link" data-view="response" href="#response">
+    <a class="view-link" data-view="response" href="#response" hidden>
       <span class="vt">Field drought response</span>
-      <span class="vd">Which fields held greenness through the drought</span>
     </a>
 
     <div id="exampleNav"></div>
 
-    <p class="group">Reference</p>
-    <a class="view-link" data-view="method" href="#method">
-      <span class="vt">How this works</span>
-      <span class="vd">Pruning, provenance and what it cannot say</span>
-    </a>
+    <p class="group">More</p>
     <a class="view-link" href="./overview.html">
       <span class="vt">2019–2025 dashboard</span>
-      <span class="vd">The earlier basin-level drought product</span>
     </a>
   </nav>
 
@@ -88,15 +75,14 @@
     <section class="objective" id="objBox" data-mode="basin" aria-live="polite">
       <p class="objMode" id="objMode">Basin view</p>
       <p class="objQ" id="objQ">Where did the rain fail, and did it hit farmland?</p>
-      <p class="objText" id="objText"></p>
-      <button type="button" class="objBack" id="objBack" hidden>&larr; Back to all basins</button>
+      <button type="button" class="objBack" id="objBack" hidden>&larr; All basins</button>
     </section>
 
     <section class="card" id="cardMain">
       <h2 id="ctxTitle">Drought overview</h2>
       <p class="ctxLead" id="ctxLead">Loading basins…</p>
       <div id="basinControls">
-        <label class="group" for="metricSel">Colour basins by</label>
+        <label class="group" for="metricSel">Colour by</label>
         <select id="metricSel"></select>
         <div class="ramp" id="ramp"></div>
         <div class="rampLbl"><span id="rampLo">0</span><span id="rampHi"></span></div>
@@ -105,8 +91,7 @@
       <label class="toggle" for="satToggle">
         <input type="checkbox" id="satToggle" checked>
         <span>
-          <span class="tt">Satellite underlay</span>
-          <span class="td" id="satHint">Esri World Imagery, held well back</span>
+          <span class="tt">Satellite</span>
         </span>
       </label>
     </section>
@@ -130,15 +115,6 @@
       <div id="pickCharts"></div>
     </section>
 
-    <section class="card" id="notesBox">
-      <h2>Notes</h2>
-      <ul class="notes" id="notes">
-        <li id="noteA">Basins ship whole as GeoJSON; fields are read per viewport with
-          DuckDB over HTTP range requests, so nothing is preloaded.</li>
-        <li id="noteB">Zoom past z10.5, then press <kbd>Ctrl K</kbd> and run
-          “Load fields in view”.</li>
-      </ul>
-    </section>
   </aside>
 </div>
 
@@ -147,7 +123,7 @@
   <div class="paletteScrim" id="paletteScrim"></div>
   <div class="palette" role="dialog" aria-modal="true" aria-label="Command palette">
     <input id="paletteInput" type="text" autocomplete="off" spellcheck="false"
-           placeholder="Type a command — try “cropland”, “fly to Sorriso”, “over 150 days”">
+           placeholder="Search commands">
     <ul id="paletteList" role="listbox"></ul>
     <div class="paletteFoot">
       <span><kbd>↑</kbd><kbd>↓</kbd> move</span>
@@ -160,6 +136,6 @@
 <div id="tip" class="tip"></div>
 
 <script src="./vendor/maplibre-gl.js"></script>
-<script type="module" src="./src/app.js?v=c85a9b0445"></script>
+<script type="module" src="./src/app.js?v=f2eae11f02"></script>
 </body>
 </html>

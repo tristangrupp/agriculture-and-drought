@@ -46,11 +46,11 @@ function buildSteps(h) {
 	return [
 		{
 			id: 'welcome',
-			title: 'What am I looking at?',
-			body: `<p>In 2024, large parts of Brazil got far less rain than usual.</p>
-        <p>This map shows <em>where</em> that happened, then zooms in on individual farm
-        fields to see which ones stayed green anyway.</p>
-        <p>The tour takes about a minute. You can leave it at any point.</p>`,
+			title: 'What’s this?',
+			body: `<p>In 2024, much of Brazil had far less rain than usual.</p>
+        <p>This map shows <em>where</em>. Then it zooms to individual farm fields, to see
+        which ones stayed green anyway.</p>
+        <p>One minute. Leave at any point.</p>`,
 			primary: 'Show me around',
 			skip: 'Skip, I’ll explore'
 		},
@@ -63,32 +63,31 @@ function buildSteps(h) {
 				h.flyToBrazil();
 				await sleep(1000);
 			},
-			body: `<p>Each shape is a river basin. The darker the orange, the more days in 2024
-        the rain fell short of what is normal <em>for that time of year</em>.</p>
-        <p>So an ordinary dry season never counts as drought — only rain that failed
-        when it should have come. Hover any basin to see its numbers.</p>`
+			body: `<p>Each shape is a river basin. Darker orange means more days in 2024 when
+        rain fell short of normal <em>for that time of year</em>.</p>
+        <p>An ordinary dry season never counts. Hover a basin for its numbers.</p>`
 		},
 		{
 			id: 'views',
-			title: 'Other ways to colour the map',
+			title: 'Other basin colours',
 			target: [
 				'.view-link[data-view="overview"]',
 				'.view-link[data-view="stress"]',
 				'.view-link[data-view="exposure"]'
 			],
-			body: `<p>These re-colour the same basins: how long the drought lasted, how severe
-        it was, and how much farmland sat inside it.</p>
-        <p>A very dry basin with no farms matters less for food and water than a moderately
-        dry one full of crops.</p>`
+			body: `<p>These recolour the same basins: drought length, severity, and the cropland
+        inside.</p>
+        <p>A dry basin with no farms matters less than a moderately dry one full of
+        crops.</p>`
 		},
 		{
 			id: 'examples',
 			title: 'Ten places, up close',
 			target: '#exampleNav',
 			requires: haveExamples,
-			body: `<p>We looked closely at ten places, each a different kind of farming —
-        sugarcane, coffee, soy and more.</p>
-        <p>Each button takes you to thousands of real field boundaries.</p>`
+			body: `<p>Ten places, each a different kind of farming: sugarcane, coffee, soy,
+        and more.</p>
+        <p>Each opens thousands of real field boundaries.</p>`
 		},
 		{
 			id: 'fields',
@@ -104,20 +103,19 @@ function buildSteps(h) {
 			},
 			body: () => `<p>This is <em>${esc(h.currentRegion() || 'one example')}</em>. Every
         outline is one farm field.</p>
-        <p>Satellites measured how green each field was through the drought.
-        <em>Darker green</em> means a field stayed greener than the fields around it while
-        the rain failed.</p>
-        <p>Notice the top of the right-hand panel has switched to <em>Field view</em>, with
-        its own question. Zoom out, or use <em>Back to all basins</em>, to return.</p>`
+        <p><em>Darker green</em> means a field stayed greener than its neighbours while the
+        rain failed.</p>
+        <p>The panel has switched to <em>Field view</em>, with its own question. Zoom out,
+        or use <em>All basins</em>, to return.</p>`
 		},
 		{
 			id: 'pale',
 			title: 'Pale means not measured',
 			target: '#map',
 			requires: canZoomIn,
-			body: `<p>The pale fields are real fields that weren’t scored: pasture, forest,
-        very small plots, or places too cloudy to see clearly.</p>
-        <p>They’re drawn so you can see nothing is missing — only unmeasured.</p>`
+			body: `<p>Pale fields are real fields that weren’t scored: pasture, forest, small
+        plots, or places too cloudy to read.</p>
+        <p>They stay on the map so that nothing looks missing.</p>`
 		},
 		{
 			id: 'story',
@@ -131,27 +129,26 @@ function buildSteps(h) {
 				await h.showField(f.props);
 				await sleep(1500);
 			},
-			body: `<p>Here is one of the fields that held up best.</p>
-        <p>Top: its greenness (<em>solid green</em>) against its neighbours (dashed).<br>
-        Bottom: the rain (<em>blue</em>) against the drought line (dashed).<br>
-        The shaded band is when the drought ran.</p>
-        <p>Click any field on the map to see its own version.</p>`
+			body: `<p>One of the fields that held up well.</p>
+        <p>Top: this field in <em>green</em>, its neighbours dashed.<br>
+        Bottom: rain in <em>blue</em>, the drought line dashed.<br>
+        Shaded band: the drought.</p>
+        <p>Click any field for its own charts.</p>`
 		},
 		{
 			id: 'limits',
 			title: 'What this can’t tell you',
-			body: `<p>A field that stays green in a drought <em>might</em> be irrigated. It
-        might also have deeper-rooted crops, a later planting date, or wetter soil.</p>
-        <p>So this points to fields worth a closer look. It doesn’t prove anyone was
-        drawing water.</p>`
+			body: `<p>A field that stays green in a drought <em>might</em> draw irrigation
+        water. It might also root deeper, plant later, or sit on wetter soil.</p>
+        <p>This points to fields worth a look. It doesn’t prove water use.</p>`
 		},
 		{
 			id: 'done',
 			title: 'You’re set',
 			target: '#tourBtn',
-			body: `<p>Switch the satellite photo on or off in the right-hand panel, and press
-        <kbd>Ctrl K</kbd> (<kbd>⌘K</kbd> on a Mac) to search for anything.</p>
-        <p>This tour stays behind the <em>Tour</em> button if you want it again.</p>`,
+			body: `<p>The satellite toggle is in the panel. <kbd>Ctrl K</kbd> searches
+        commands.</p>
+        <p>The <em>Tour</em> button reopens this.</p>`,
 			primary: 'Start exploring'
 		}
 	];

@@ -55,19 +55,12 @@ const MODES = {
 	basin: {
 		label: 'Basin view',
 		crumb: 'BASINS',
-		q: 'Where did the rain fail, and did it hit farmland?',
-		text:
-			'Compare basins. Darker means more days in 2024 when rain fell short of normal for ' +
-			'that time of year. Switch to cropland exposure to see where the drought met farms.'
+		q: 'Where did the rain fail, and did it hit farmland?'
 	},
 	field: {
 		label: 'Field view',
 		crumb: 'FIELDS',
-		q: 'Under the same rain, which fields stayed green?',
-		text:
-			'Every field here got the same rainfall. Darker green fields held their greenness ' +
-			'better than their neighbours; pale ones were not measured. Click a field for its ' +
-			'trend against the rain.'
+		q: 'Under the same rain, which fields stayed green?'
 	}
 };
 
@@ -82,35 +75,27 @@ const STATIC = !!CONFIG.STATIC;
 const VIEWS = {
 	overview: {
 		title: 'Drought overview',
-		lead: 'CHIRPS rainfall against a 1990–2010 baseline, per HydroBASINS level-6 basin. ' +
-			'A day counts as drought only when the previous 30 days fall below the driest ' +
-			'fifth for that date, so an ordinary dry season is not counted.',
+		lead: '',
 		metric: 'total_drought_days'
 	},
 	stress: {
 		title: 'Water-stressed basins',
-		lead: 'A composite of duration, longest unbroken event and accumulated deficit, ' +
-			'each scaled to its own 95th percentile so no unit dominates.',
+		lead: '',
 		metric: 'stress'
 	},
 	exposure: {
 		title: 'Cropland exposure',
-		lead: 'Stress multiplied by the cropland actually inside the basin. A very dry ' +
-			'basin with no farmland scores low here, which is the point.',
+		lead: '',
 		metric: 'exposure'
 	},
 	fields: {
 		title: 'Fields in view',
-		lead: '29.2 million Brazilian field polygons, read per viewport straight from ' +
-			'GeoParquet. Zoom past z10.5 and load them.',
+		lead: '',
 		metric: 'total_drought_days'
 	},
 	response: {
 		title: 'Field drought response',
-		lead: 'Each field\u2019s NDVI minus the median of every field around it on the same ' +
-			'date, averaged across the drought. Comparing neighbours on one date cancels ' +
-			'the season, the drought and the atmosphere; what is left is this field against ' +
-			'its neighbours under the same rain.',
+		lead: '',
 		metric: 'stress'
 	},
 	method: {
@@ -328,25 +313,18 @@ if (typeof ResizeObserver !== 'undefined') {
 /* Static-build cleanup is page structure, not cartography, so it runs immediately.
    Inside the map load handler it waited on WebGL: when the map stalled, the public
    site still offered a live-query view and notes for a path that does not ship. */
+if (!STATIC) {
+	// index.html ships them hidden, because the published build has no parquet behind them.
+	document.querySelectorAll('[data-view="fields"], [data-view="response"]').forEach(
+		(a) => a.removeAttribute('hidden')
+	);
+}
 if (STATIC) {
 	// No parquet ships, so the live-query view would only ever fail, and the notes
 	// must not tell the reader to use a path that is not there.
 	document.querySelectorAll('[data-view="fields"]').forEach((a) => a.remove());
 	const zf = $('zoomFields');
 	if (zf) zf.hidden = true;
-	const a = $('noteA');
-	const b = $('noteB');
-	if (a) {
-		a.innerHTML =
-			'Pick an example on the left. Each is a window of a few thousand fields, ' +
-			'scored against Sentinel-2 through that basin’s 2024 drought.';
-	}
-	if (b) {
-		b.innerHTML =
-			'Click any field for its NDVI trend against the rainfall that drove it. ' +
-			'Holding greenness is consistent with irrigation — and with deeper ' +
-			'roots, a later planting, or wetter soil.';
-	}
 }
 
 
@@ -766,13 +744,8 @@ function setBasemap(on) {
 
 /** Say when the layer is present but out of range, rather than looking broken. */
 function updateSatHint() {
-	const el = $('satHint');
-	if (!el) return;
-	el.textContent = !state.satellite
-		? 'Esri World Imagery, held well back'
-		: map.getZoom() < SAT_MIN_ZOOM
-			? 'Zoom in to an example to see it'
-			: 'Esri World Imagery, held well back';
+	/* The hint text is gone; the checkbox label says what it does. Kept as a hook so the
+	   zoom handlers and setBasemap need not know that. */
 }
 
 function toggleBasemap() {
@@ -797,7 +770,8 @@ function renderRanking() {
 	const host = $('ctxExtra');
 	if (!host) return;
 	if (!state.stressed || !state.stressed.length) {
-		host.innerHTML = state.basinFields
+		// A visitor should never be told to run a script they do not have.
+		host.innerHTML = state.basinFields || STATIC
 			? ''
 			: '<p class="ctxLead" style="margin-top:10px">Run <code>pipeline/field_drought.py</code>' +
 				' to add the field join, and this becomes a ranked list.</p>';
@@ -806,9 +780,7 @@ function renderRanking() {
 	const key = state.view === 'exposure' ? 'exposure' : 'stress';
 	const rows = state.stressed.slice().sort((a, b) => b[key] - a[key]).slice(0, 12);
 	host.innerHTML =
-		`<p class="group" style="margin-top:14px">Top basins by ${
-			key === 'exposure' ? 'cropland exposure' : 'water stress'
-		}</p><div class="rank">` +
+		`<p class="group" style="margin-top:14px">Top basins</p><div class="rank">` +
 		rows
 			.map(
 				(r, i) => `<div class="rankRow" data-bidx="${r.bidx}">
@@ -856,13 +828,13 @@ async function showField(props) {
 	$('pickStats').innerHTML =
 		`<div class="stat"><span class="v">${
 			props.held == null ? '\u2014' : Number(props.held).toFixed(2)
-		}</span><span class="k">held greenness</span></div>
+		}</span><span class="k">held green</span></div>
      <div class="stat"><span class="v">${
 				props.anom == null ? '\u2014' : (Number(props.anom) >= 0 ? '+' : '') + Number(props.anom).toFixed(3)
 			}</span><span class="k">vs neighbours</span></div>
      <div class="stat"><span class="v">${
 				props.area_ha == null ? '\u2014' : Number(props.area_ha).toFixed(1)
-			}</span><span class="k">hectares</span></div>`;
+			}</span><span class="k">ha</span></div>`;
 	if (props.held == null) {
 		$('pickCharts').innerHTML =
 			`<p class="ctxLead">This field is mapped but not scored: ${unscoredReason(props)}.
@@ -993,15 +965,9 @@ async function loadExample(hybas) {
 		const nScored = gj.features.filter((f) => f.properties.held != null).length;
 		$('fieldStats').innerHTML =
 			`<div class="stat"><span class="v">${gj.features.length.toLocaleString()}</span>
-        <span class="k">fields mapped</span></div>
+        <span class="k">mapped</span></div>
        <div class="stat"><span class="v">${nScored.toLocaleString()}</span>
-        <span class="k">of those scored</span></div>
-       <div class="stat"><span class="v">${ex.crops[0]}</span>
-        <span class="k">commonest crop</span></div>`;
-		$('fieldClasses').innerHTML =
-			`<p class="ctxLead" style="margin-top:10px">Every field trazo4 delineated here is
-       drawn. The pale ones were not scored \u2014 not cropland, under 2 ha, or too few
-       clear satellite looks. Click one to see which.</p>`;
+        <span class="k">scored</span></div>`;
 		if (state.view !== 'response') setView('response');
 		else renderResponsePanel();
 		map.once('moveend', () => applyMode(true));
@@ -1023,14 +989,12 @@ function renderExampleNav() {
 	const host = $('exampleNav');
 	if (!host || !state.examples) return;
 	host.innerHTML =
-		'<p class="group">Examples</p>' +
+		'<p class="group">Places</p>' +
 		state.examples
 			.map(
 				(e) => `<a class="view-link ex-link" data-hybas="${e.hybas}" href="#response">
         <span class="vt">${e.region}</span>
-        <span class="vd">${e.system} \u00b7 ${e.n_fields.toLocaleString()} fields${
-					e.n_scored ? `, ${e.n_scored.toLocaleString()} scored` : ''
-				}</span></a>`
+        <span class="vd">${e.system}</span></a>`
 			)
 			.join('');
 	host.querySelectorAll('.ex-link').forEach((a) => {
@@ -1089,10 +1053,6 @@ function renderExamplePanel() {
 			' through that basin\u2019s 2024 drought.</p>';
 		return;
 	}
-	const green = rec.season_overlap > 0.35;
-	const note = green
-		? `Median NDVI held at ${rec.season_overlap.toFixed(2)} through the drought, so there was a crop to lose. Greener-than-neighbours is consistent with irrigation, and also with deeper roots, a later planting or wetter soil.`
-		: `The neighbourhood browned off to ${rec.season_overlap.toFixed(2)} median NDVI. Fields still running well above their neighbours here are the clearest signal this method produces \u2014 though a later planting would look the same.`;
 	host.innerHTML =
 		`<p class="group" style="margin-top:14px">${ex.region} \u2014 ${ex.system}</p>
      ${sparkline(rec)}
@@ -1103,20 +1063,18 @@ function renderExamplePanel() {
          <span class="k">fields mapped</span></div>
        <div class="stat"><span class="v">${(ex.n_scored || 0).toLocaleString()}</span>
          <span class="k">of those scored</span></div>
-       <div class="stat"><span class="v">${rec.dates.length}</span>
-         <span class="k">clear composites</span></div>
        <div class="stat"><span class="v">${rec.season_overlap.toFixed(2)}</span>
-         <span class="k">scene NDVI in drought</span></div>
+         <span class="k">scene NDVI</span></div>
      </div>
      <div class="ramp" style="margin-top:12px">${HELD_COLORS.map(
 				(c) => `<i style="background:${c}"></i>`
 			).join('')}</div>
-     <div class="rampLbl"><span>like its neighbours</span><span>held greenness</span></div>
-     <p class="ctxLead" style="margin-top:10px">${note}</p>
-     <p class="ctxLead" style="margin-top:8px">Mostly ${ex.crops.join(' and ')}.
-       Drought ran ${rec.event.start} to ${rec.event.end}.</p>
-     <p class="ctxLead" style="margin-top:8px">Every field trazo4 delineated here is drawn.
-       Click a pale one to see why it was not scored.</p>`;
+     <div class="rampLbl"><span>like neighbours</span><span>held green</span></div>
+     <p class="ctxLead" style="margin-top:10px">${ex.crops.join(', ')} \u00b7 ${
+				rec.event.start
+			} to ${rec.event.end}</p>
+     <p class="ctxNote">Green suggests irrigation, or deeper roots, later planting,
+       wetter soil. Not proof.</p>`;
 }
 
 function renderResponsePanel() {
@@ -1225,7 +1183,6 @@ function applyMode(force) {
 	if (box) box.dataset.mode = mode;
 	if ($('objMode')) $('objMode').textContent = m.label;
 	if ($('objQ')) $('objQ').textContent = m.q;
-	if ($('objText')) $('objText').textContent = m.text;
 	if ($('crumbMode')) $('crumbMode').textContent = m.crumb;
 	if ($('objBack')) $('objBack').hidden = mode !== 'field';
 	document.body.dataset.mode = mode;
@@ -1276,8 +1233,9 @@ function setView(name) {
 		name === 'overview' && state.basins
 			? `${state.basins.features.length.toLocaleString()} basins · ${(
 					state.inDrought || 0
-				).toLocaleString()} in drought during ${CONFIG.YEAR}. ${v.lead}`
+				).toLocaleString()} in drought`
 			: v.lead;
+	$('ctxLead').hidden = !$('ctxLead').textContent;
 	const avail = metricDefs().some((m) => m.key === v.metric);
 	if (avail && state.basins) setMetric(v.metric);
 	if (name === 'response') loadExamples();

@@ -379,4 +379,17 @@ code {
 .crumb-mode { color: var(--accent-ink); }
 body[data-mode="field"] .crumb-mode { color: #1f5e2c; }
 /* Cards and controls set their own display; hidden must win. */
-.context [hidden], .objective [hidden] { display: none !important; }
+/* .ghost, .primary and .view-link all set their own display, which beats the UA rule for
+   the hidden attribute. Without this, hidden nav items and buttons still show. */
+[hidden] { display: none !important; }
+
+/* ---- minimal pass -------------------------------------------------------- */
+/* The one caveat that stays on the page: quieter than a lead, still legible. */
+.ctxNote {
+	margin: 8px 0 0; font-size: 11.5px; line-height: 1.45; color: var(--muted);
+}
+/* Nav items lost their description lines, so they need less vertical room. */
+.view-link { padding-top: 6px; padding-bottom: 6px; }
+.objective { padding-bottom: 10px; }
+.objQ { margin-bottom: 0; }
+.objBack { margin-top: 8px; }
